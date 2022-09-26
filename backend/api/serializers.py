@@ -11,45 +11,50 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'email',
-            'id',
-            'username',
-            'first_name',
-            'last_name',
+            "email",
+            "id",
+            "username",
+            "first_name",
+            "last_name",
         )
 
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = '__all__'
+        fields = "__all__"
 
 
 class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
-        fields = '__all__'
+        fields = "__all__"
 
 
 class IngredientAmountSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
-    name = serializers.ReadOnlyField(source='ingredient.name')
+    name = serializers.ReadOnlyField(source="ingredient.name")
     measurement_unit = serializers.ReadOnlyField(
-        source='ingredient.measurement_unit',
+        source="ingredient.measurement_unit",
     )
     amount = serializers.IntegerField(min_value=1)
 
     class Meta:
         model = IngredientAmountInRecipe
-        fields = ('id', 'name', 'measurement_unit', 'amount')
+        fields = (
+            "id",
+            "name",
+            "measurement_unit",
+            "amount"
+        )
 
 
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name=f'temp.{ext}')
+        if isinstance(data, str) and data.startswith("data:image"):
+            format, imgstr = data.split(";base64,")
+            ext = format.split("/")[-1]
+            data = ContentFile(base64.b64decode(imgstr), name=f"temp.{ext}")
         return super().to_internal_value(data)
 
 
@@ -72,36 +77,55 @@ class RecipeSerializer(serializers.ModelSerializer):
         required=True,
     )
     ingredients = IngredientAmountSerializer(
-        source='ingredients_in_recipe',
+        source="ingredients_in_recipe",
         many=True,
         required=True
     )
-    image = Base64ImageField(allow_null=True, )
+    image = Base64ImageField(
+        allow_null=True,
+        required=True
+    )
     author = CustomUserSerializer(read_only=True)
-    cooking_time = serializers.IntegerField(min_value=1)
+    cooking_time = serializers.IntegerField(
+        min_value=1,
+        required=True
+    )
 
     class Meta:
         model = Recipe
         fields = (
-            'id', 'name', 'text', 'tags', 'ingredients', 'image', 'author', 'cooking_time'
+            "id",
+            "name",
+            "text",
+            "tags",
+            "ingredients",
+            "image",
+            "author",
+            "cooking_time",
         )
 
+    def create(self, validated_data):
+        ingredients = validated_data.pop("ingredients_in_recipe")
+        tags = validated_data.pop("tags")
+        recipe = Recipe.objects.create(**validated_data)
+        recipe.tags.set(tags)
+        recipe.ingredients_in_recipe.set(
+            IngredientAmountInRecipe.objects.create(
+                recipe=recipe, ingredient=i.get("id"), amount=i.get("amount")
+            )
+            for i in ingredients
+        )
+        return recipe
 
-"""
-{
-  "ingredients": [
-    {
-      "id": 1123,
-      "amount": 10
-    }
-  ],
-  "tags": [
-    1,
-    2
-  ],
-  "image": "data:image/png;
-  "name": "string",
-  "text": "string",
-  "cooking_time": 1
-}
-"""
+
+class RecipeFavoriteSerializer(serializers.ModelSerializer):
+    image = Base64ImageField()
+
+    class Meta:
+        model = Recipe
+        fields = (
+            'id',
+            'name',
+            'image',
+            'cooking_time',
+        )

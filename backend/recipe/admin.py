@@ -3,11 +3,20 @@ from recipe.models import Tag, Ingredient, Recipe
 
 
 class TagAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "color", "slug",)
+    list_display = (
+        "id",
+        "name",
+        "color",
+        "slug",
+    )
 
 
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "measurement_unit",)
+    list_display = (
+        "id",
+        "name",
+        "measurement_unit",
+    )
 
 
 class RecipeAdmin(admin.ModelAdmin):
