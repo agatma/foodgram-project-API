@@ -1,30 +1,17 @@
-from django.db import models
-from django.utils.translation import gettext_lazy as _
-from django.core.validators import MinValueValidator
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator
+from django.db import models
 from django.db.models import UniqueConstraint
+from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
 
 class Tag(models.Model):
-    name = models.CharField(
-        _("Название"),
-        max_length=200,
-        unique=True
-    )
-    color = models.CharField(
-        _("Цвет"),
-        max_length=7,
-        null=True,
-        blank=False
-    )
+    name = models.CharField(_("Название"), max_length=200, unique=True)
+    color = models.CharField(_("Цвет"), max_length=7, null=True, blank=False)
     slug = models.SlugField(
-        _("Ссылка"),
-        max_length=200,
-        unique=True,
-        null=True,
-        blank=False
+        _("Ссылка"), max_length=200, unique=True, null=True, blank=False
     )
 
     class Meta:
@@ -37,15 +24,9 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
-    name = models.CharField(
-        _("Название"),
-        max_length=200,
-        null=False
-    )
+    name = models.CharField(_("Название"), max_length=200, null=False)
     measurement_unit = models.CharField(
-        _("Единица измерения"),
-        max_length=30,
-        null=False
+        _("Единица измерения"), max_length=30, null=False
     )
 
     class Meta:
@@ -65,11 +46,7 @@ class Recipe(models.Model):
         null=True,
         on_delete=models.SET_NULL,
     )
-    name = models.CharField(
-        _("Название"),
-        max_length=200,
-        null=False,
-        blank=False)
+    name = models.CharField(_("Название"), max_length=200, null=False, blank=False)
     text = models.CharField(
         _("Описание"),
         max_length=1024,
@@ -88,10 +65,7 @@ class Recipe(models.Model):
         verbose_name=_("Теги"),
     )
     image = models.ImageField(
-        _("Изображение"),
-        upload_to="media/",
-        null=True,
-        default=None
+        _("Изображение"), upload_to="media/", null=True, default=None
     )
     cooking_time = models.PositiveIntegerField(
         _("Время приготовления"),
@@ -116,14 +90,10 @@ class Recipe(models.Model):
 
 class IngredientAmountInRecipe(models.Model):
     recipe = models.ForeignKey(
-        to=Recipe,
-        related_name="ingredients_in_recipe",
-        on_delete=models.CASCADE
+        to=Recipe, related_name="ingredients_in_recipe", on_delete=models.CASCADE
     )
     ingredient = models.ForeignKey(
-        to=Ingredient,
-        related_name="ingredients_in_recipe",
-        on_delete=models.RESTRICT
+        to=Ingredient, related_name="ingredients_in_recipe", on_delete=models.RESTRICT
     )
     amount = models.PositiveIntegerField(
         _("Количество"),
@@ -151,13 +121,13 @@ class FavoriteRecipe(models.Model):
         verbose_name=_("Автор"),
     )
     added_date = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_("Дата добавления")
+        auto_now_add=True, verbose_name=_("Дата добавления")
     )
 
     class Meta:
         verbose_name = _("Избранное")
         constraints = (
-            models.UniqueConstraint(fields=("recipe", "user"), name="unique_favorite_recipe"),
+            models.UniqueConstraint(
+                fields=("recipe", "user"), name="unique_favorite_recipe"
+            ),
         )
-

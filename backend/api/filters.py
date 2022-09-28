@@ -1,24 +1,38 @@
-from django_filters import rest_framework
-from recipe.models import Recipe
+from django_filters import rest_framework as filters
+
+from recipe.models import Recipe, Ingredient
 
 
-class RecipeFilter(rest_framework.FilterSet):
-    is_favorited = rest_framework.BooleanFilter(
-        field_name='is_favorited',
-        method='favorite_filter'
+class RecipeFilter(filters.FilterSet):
+    is_favorited = filters.BooleanFilter(
+        field_name="is_favorited", method="favorite_filter"
     )
     # is_in_shopping_cart = rest_framework.BooleanFilter(
     #     field_name='is_in_shopping_cart',
     #     method='shopping_cart_filter'
     # )
-    tags = rest_framework.AllValuesMultipleFilter(field_name='tags__slug')
+    tags = filters.AllValuesMultipleFilter(field_name="tags__slug")
 
-    def favorite_filter(self):
-        return Recipe.objects.filter(favorite_recipe__user=self.request.user)
+    def favorite_filter(self, queryset, name, value):
+        if value and self.request.user.is_authenticated:
+            return queryset.filter(favorite_recipe__user=self.request.user)
+        return queryset
 
     # def shopping_cart_filter(self):
     #     return Recipe.objects.filter(shopping_cart__user=self.request.user)
 
     class Meta:
         model = Recipe
-        fields = ['author']
+        fields = ("tags", "author")
+
+
+class IngredientFilter(filters.FilterSet):
+    name = filters.CharFilter(field_name="name", method="filter_name")
+
+    @staticmethod
+    def filter_name(queryset, name, value):
+        return queryset.filter(name__icontains=value)
+
+    class Meta:
+        model = Ingredient
+        fields = ("name",)

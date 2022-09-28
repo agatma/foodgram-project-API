@@ -62,3 +62,27 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+
+
+class Subscribe(models.Model):
+    user = models.ForeignKey(
+        to=CustomUser,
+        on_delete=models.CASCADE,
+        related_name="follower",
+        verbose_name="Подписчик",
+    )
+    author = models.ForeignKey(
+        to=CustomUser,
+        on_delete=models.CASCADE,
+        related_name="following",
+        verbose_name="Автор",
+    )
+
+    class Meta:
+        verbose_name = "Подписчик"
+        verbose_name_plural = "Подписчики"
+        constraints = (
+            models.UniqueConstraint(
+                fields=("user", "author"), name="unique_user_author"
+            ),
+        )
