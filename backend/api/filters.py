@@ -7,10 +7,10 @@ class RecipeFilter(filters.FilterSet):
     is_favorited = filters.BooleanFilter(
         field_name="is_favorited", method="favorite_filter"
     )
-    # is_in_shopping_cart = rest_framework.BooleanFilter(
-    #     field_name='is_in_shopping_cart',
-    #     method='shopping_cart_filter'
-    # )
+    is_in_shopping_cart = filters.BooleanFilter(
+        field_name='is_in_shopping_cart',
+        method='shopping_cart_filter'
+    )
     tags = filters.AllValuesMultipleFilter(field_name="tags__slug")
 
     def favorite_filter(self, queryset, name, value):
@@ -18,8 +18,8 @@ class RecipeFilter(filters.FilterSet):
             return queryset.filter(favorite_recipe__user=self.request.user)
         return queryset
 
-    # def shopping_cart_filter(self):
-    #     return Recipe.objects.filter(shopping_cart__user=self.request.user)
+    def shopping_cart_filter(self):
+        return Recipe.objects.filter(shopping_cart__user=self.request.user)
 
     class Meta:
         model = Recipe

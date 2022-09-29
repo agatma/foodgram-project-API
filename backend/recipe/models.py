@@ -8,6 +8,7 @@ User = get_user_model()
 
 
 class Tag(models.Model):
+    """Тег"""
     name = models.CharField(_("Название"), max_length=200, unique=True)
     color = models.CharField(_("Цвет"), max_length=7, null=True, blank=False)
     slug = models.SlugField(
@@ -24,6 +25,7 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
+    """Ингредиент"""
     name = models.CharField(_("Название"), max_length=200, null=False)
     measurement_unit = models.CharField(
         _("Единица измерения"), max_length=30, null=False
@@ -39,6 +41,8 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
+    """Рецепт"""
+
     author = models.ForeignKey(
         to=User,
         verbose_name=_("Автор"),
@@ -89,6 +93,7 @@ class Recipe(models.Model):
 
 
 class IngredientAmountInRecipe(models.Model):
+    """Количество ингредиентов в рецепте"""
     recipe = models.ForeignKey(
         to=Recipe, related_name="ingredients_in_recipe", on_delete=models.CASCADE
     )
@@ -108,6 +113,7 @@ class IngredientAmountInRecipe(models.Model):
 
 
 class FavoriteRecipe(models.Model):
+    """Избранное"""
     recipe = models.ForeignKey(
         to=Recipe,
         related_name="favorite_recipe",
@@ -126,8 +132,34 @@ class FavoriteRecipe(models.Model):
 
     class Meta:
         verbose_name = _("Избранное")
+        verbose_name_plural = _("Избранное")
         constraints = (
             models.UniqueConstraint(
                 fields=("recipe", "user"), name="unique_favorite_recipe"
+            ),
+        )
+
+
+class ShoppingCart(models.Model):
+    """Корзина"""
+    user = models.ForeignKey(
+        to=User,
+        related_name="shopping_cart",
+        on_delete=models.CASCADE,
+        verbose_name=_("Пользователь"),
+    )
+    recipe = models.ForeignKey(
+        to=Recipe,
+        related_name="shopping_cart",
+        on_delete=models.CASCADE,
+        verbose_name=_("Корзина"),
+    )
+
+    class Meta:
+        verbose_name = _("Корзина")
+        verbose_name_plural = _("Корзина")
+        constraints = (
+            models.UniqueConstraint(
+                fields=("recipe", "user"), name="unique_recipe_in_shopping_cart"
             ),
         )

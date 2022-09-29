@@ -15,6 +15,7 @@ from api.views import (
     SubscribeCreateDestroyView,
     CustomUserViewSet,
     RecipeFavoriteView,
+    ShoppingCartView,
 )
 
 router = DefaultRouter()
@@ -30,6 +31,7 @@ urlpatterns = [
     path("", include("djoser.urls")),
     path("auth/", include("djoser.urls.authtoken")),
     path(r"recipes/<int:pk>/favorite/", RecipeFavoriteView.as_view()),
+    path(r"recipes/<int:pk>/shopping_cart/", ShoppingCartView.as_view()),
     path(r"users/<int:pk>/subscribe/", SubscribeCreateDestroyView.as_view()),
 ]
 
@@ -38,11 +40,11 @@ if settings.DEBUG:
 
 schema_view = get_schema_view(
     openapi.Info(
-        title="Cats API",
+        title="Foodgram API",
         default_version="v1",
-        description="Документация для приложения cats проекта Kittygram",
+        description="Документация для приложения api проекта Foodgram",
         # terms_of_service="URL страницы с пользовательским соглашением",
-        contact=openapi.Contact(email="admin@kittygram.ru"),
+        contact=openapi.Contact(email="admin@mail.ru"),
         license=openapi.License(name="BSD License"),
     ),
     public=True, permission_classes=(permissions.AllowAny,),
