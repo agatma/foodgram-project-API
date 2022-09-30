@@ -15,15 +15,15 @@ class RecipeFilter(filters.FilterSet):
 
     def favorite_filter(self, queryset, _, value):
         if value and self.request.user.is_authenticated:
-            return queryset.filter(favorite_recipe__user=self.request.user)
+            return queryset.filter(favorite_recipe__user=self.request.user.id)
         return queryset
 
-    def shopping_cart_filter(self):
-        return Recipe.objects.filter(shopping_cart__user=self.request.user)
+    def shopping_cart_filter(self, queryset, _, value):
+        return Recipe.objects.filter(shopping_cart__user=self.request.user.id)
 
     class Meta:
         model = Recipe
-        fields = ("tags", "author")
+        fields = ("author",)
 
 
 class IngredientFilter(filters.FilterSet):

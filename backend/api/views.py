@@ -86,5 +86,3 @@ class ShoppingCartDownload(GenericAPIView):
     def get(self, request, *args, **kwargs):
         return create_ingredients_file(request.user)
 
-# Management
-# https://github.com/AigulParamonova/foodgram-project-react/blob/master/backend/api/mixins.py
