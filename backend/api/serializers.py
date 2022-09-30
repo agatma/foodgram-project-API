@@ -2,9 +2,6 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
-
 from recipe.models import (
     Ingredient,
     IngredientAmountInRecipe,
@@ -12,6 +9,8 @@ from recipe.models import (
     ShoppingCart,
     Tag,
 )
+from rest_framework import serializers
+from rest_framework.validators import UniqueTogetherValidator
 from users.models import Subscribe
 
 User = get_user_model()
@@ -110,7 +109,6 @@ class RecipeSerializer(serializers.ModelSerializer):
             "cooking_time",
             "is_favorited",
             "is_in_shopping_cart",
-
         )
 
     @staticmethod
@@ -126,7 +124,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def validate_tags(data):
         if not data or len(set(data)) < len(data):
             raise serializers.ValidationError(
-                {"tags": "Укажите подходящий уникальный тег (теги)"}
+                {"tags": "”Í‡ÊËÚÂ ÔÓ‰ıÓ‰ˇ˘ËÈ ÛÌËÍ‡Î¸Ì˚È ÚÂ„ (ÚÂ„Ë)"}
             )
         return data
 
@@ -134,7 +132,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     def validate_ingredients(data):
         if len({i["id"] for i in data}) < len(data):
             raise serializers.ValidationError(
-                {"ingredients": "Ингредиенты должны быть уникальными"}
+                {"ingredients": "»Ì„Â‰ËÂÌÚ˚ ‰ÓÎÊÌ˚ ·˚Ú¸ ÛÌËÍ‡Î¸Ì˚ÏË"}
             )
         return data
 
@@ -146,10 +144,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     def get_is_in_shopping_cart(self, obj):
-        if self.context.get('request').user.is_anonymous:
+        if self.context.get("request").user.is_anonymous:
             return False
         return ShoppingCart.objects.filter(
-            user=self.context.get('request').user, recipe=obj).exists()
+            user=self.context.get("request").user, recipe=obj
+        ).exists()
 
     def create(self, validated_data):
         ingredients = validated_data.pop("ingredients_in_recipe")
@@ -228,15 +227,6 @@ class SubscribeSerializer(serializers.ModelSerializer):
     @staticmethod
     def get_is_subscribed(obj):
         return Subscribe.objects.filter(user=obj.user, author=obj.author).exists()
-
-
-class ShoppingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ShoppingCart
-        fields = "__all__"
-        validators = UniqueTogetherValidator(
-            queryset=ShoppingCart.objects.all(), fields=("user", "recipe")
-        )
 
 
 class TagSerializer(serializers.ModelSerializer):

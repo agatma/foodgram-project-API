@@ -1,22 +1,16 @@
 from django.conf import settings
+from django.conf.urls import url
 from django.conf.urls.static import static
 from django.urls import include, path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
-from rest_framework.routers import DefaultRouter
 from rest_framework import permissions
-from django.conf.urls import url
+from rest_framework.routers import DefaultRouter
 
-from api.views import (
-    IngredientViewSet,
-    RecipeViewSet,
-    TagViewSet,
-    SubscribeListViewSet,
-    SubscribeCreateDestroyView,
-    CustomUserViewSet,
-    RecipeFavoriteView,
-    ShoppingCartView,
-)
+from api.views import (CustomUserViewSet, IngredientViewSet,
+                       RecipeFavoriteView, RecipeViewSet, ShoppingCartDownload,
+                       ShoppingCartView, SubscribeCreateDestroyView,
+                       SubscribeListViewSet, TagViewSet)
 
 router = DefaultRouter()
 router.register("tags", TagViewSet, basename="tags")
@@ -27,6 +21,7 @@ router.register("users/subscriptions", SubscribeListViewSet, basename="subscript
 router.register(r"users", CustomUserViewSet, basename="users")
 
 urlpatterns = [
+    path(r"recipes/download_shopping_cart/", ShoppingCartDownload.as_view()),
     path("", include(router.urls)),
     path("", include("djoser.urls")),
     path("auth/", include("djoser.urls.authtoken")),
@@ -42,12 +37,12 @@ schema_view = get_schema_view(
     openapi.Info(
         title="Foodgram API",
         default_version="v1",
-        description="Документация для приложения api проекта Foodgram",
-        # terms_of_service="URL страницы с пользовательским соглашением",
+        description="ƒÓÍÛÏÂÌÚ‡ˆËˇ ‰Îˇ ÔËÎÓÊÂÌËˇ api ÔÓÂÍÚ‡ Foodgram",
         contact=openapi.Contact(email="admin@mail.ru"),
         license=openapi.License(name="BSD License"),
     ),
-    public=True, permission_classes=(permissions.AllowAny,),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
 )
 
 urlpatterns += [

@@ -1,28 +1,20 @@
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from rest_framework import mixins, pagination, status, viewsets
-from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import (
-    AllowAny,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
-from rest_framework.response import Response
-
-from api.filters import RecipeFilter, IngredientFilter
-from api.serializers import (
-    IngredientSerializer,
-    ShortRecipeSerializer,
-    RecipeSerializer,
-    SubscribeSerializer,
-    TagSerializer,
-    CustomUserSerializer,
-    ShoppingSerializer,
-)
-from api.permissions import IsAuthorOrReadOnly
 from recipe.models import FavoriteRecipe, Ingredient, Recipe, ShoppingCart, Tag
+from rest_framework import mixins, pagination, viewsets
+from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from users.models import Subscribe
+
+from api.filters import IngredientFilter, RecipeFilter
+from api.mixins import RecipeActionPostDeleteGenericApiMixin, UserActionPostDeleteGenericApiMixin
+from api.permissions import IsAuthorOrReadOnly
+from api.serializers import (CustomUserSerializer, IngredientSerializer,
+                             RecipeSerializer, ShortRecipeSerializer,
+                             SubscribeSerializer, TagSerializer)
+from api.services import create_ingredients_file
 
 User = get_user_model()
 
@@ -54,28 +46,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user)
 
 
-class RecipeFavoriteView(GenericAPIView):
+class RecipeFavoriteView(RecipeActionPostDeleteGenericApiMixin):
     queryset = Recipe.objects.all()
     serializer_class = ShortRecipeSerializer
-    permission_classes = IsAuthenticated,
-
-    def post(self, request, *args, **kwargs):
-        _, created = FavoriteRecipe.objects.get_or_create(
-            recipe=self.get_object(), user=request.user
-        )
-        if created:
-            return Response(
-                data=self.get_serializer(self.get_object()).data,
-                status=status.HTTP_201_CREATED,
-            )
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, *args, **kwargs):
-        obj = FavoriteRecipe.objects.filter(recipe=self.get_object(), user=request.user)
-        if obj.exists():
-            obj.first().delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    permission_classes = (IsAuthenticated,)
+    action_model = FavoriteRecipe
 
 
 class SubscribeListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -85,47 +60,17 @@ class SubscribeListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     pagination_class = pagination.LimitOffsetPagination
 
 
-class SubscribeCreateDestroyView(GenericAPIView):
+class SubscribeCreateDestroyView(UserActionPostDeleteGenericApiMixin):
     permission_classes = (IsAuthenticated,)
     queryset = User.objects.all()
-
-    def post(self, request, *args, **kwargs):
-        author = self.get_object()
-        _, created = Subscribe.objects.get_or_create(user=request.user, author=author)
-        if author == request.user or not created:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_201_CREATED)
-
-    def delete(self, request, *args, **kwargs):
-        instance = Subscribe.objects.filter(user=request.user, author=self.get_object())
-        if instance.exists():
-            instance.first().delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    action_model = Subscribe
 
 
-class ShoppingCartView(GenericAPIView):
+class ShoppingCartView(RecipeActionPostDeleteGenericApiMixin):
     queryset = Recipe.objects.all()
     serializer_class = ShortRecipeSerializer
     permission_classes = (IsAuthenticated,)
-
-    def post(self, request, *args, **kwargs):
-        _, created = ShoppingCart.objects.get_or_create(
-            recipe=self.get_object(), user=request.user
-        )
-        if created:
-            return Response(
-                data=self.get_serializer(self.get_object()).data,
-                status=status.HTTP_201_CREATED,
-            )
-        return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, *args, **kwargs):
-        obj = ShoppingCart.objects.filter(recipe=self.get_object(), user=request.user)
-        if obj.exists():
-            obj.first().delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response(status=status.HTTP_400_BAD_REQUEST)
+    action_model = ShoppingCart
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -134,44 +79,12 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     pagination_class = None
 
-# @action(
-#        methods=('GET',),
-#        url_path='download_shopping_cart',
-#        detail=False,
-#        permission_classes=(IsAuthenticated,),
-#     )
-#     def download_shopping_cart(self, request):
-#         user_id = request.user.id
-#         list_of_ingredients = create_list_of_ingredients(user_id=user_id)
-#
-#         filename = 'list_of_ingredients.txt'
-#         response = HttpResponse(
-#             list_of_ingredients,
-#             content_type='text/plain; charset=UTF-8',
-#         )
-#         response['Content-Disposition'] = (
-#             'attachment; filename={0}'.format(filename)
-#         )
-#         return response
 
+class ShoppingCartDownload(GenericAPIView):
+    permission_classes = (IsAuthenticated,)
 
+    def get(self, request, *args, **kwargs):
+        return create_ingredients_file(request.user)
 
-
-# from django.db.models import Sum
-#
-# from recipes.models import IngredientAmount
-#
-#
-# def create_list_of_ingredients(user_id):
-#     ingredients = IngredientAmount.objects.filter(
-#         recipes__recipe_added_to_cart__user=user_id).values(
-#             'name__name',
-#             'name__measurement_unit'
-#         ).annotate(Sum('amount'))
-#     list_of_ingredients = 'Список ингредиентов: \n\n'
-#     for ingredient in ingredients:
-#         name = ingredient['name__name']
-#         unit = ingredient['name__measurement_unit']
-#         amount = ingredient['amount__sum']
-#         list_of_ingredients += f'{name} ({unit}) - {amount}\n'
-#     return list_of_ingredients
+# Management
+# https://github.com/AigulParamonova/foodgram-project-react/blob/master/backend/api/mixins.py
