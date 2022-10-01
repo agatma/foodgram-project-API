@@ -5,8 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class CustomUserManager(BaseUserManager):
-    """
-    Кастомный менеджер пользователей.
+    """Кастомный менеджер пользователей.
     Настроена идентификация по email вместо логина пользователя.
     """
 
@@ -38,21 +37,57 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    """
-    Модель пользователя. Добавлено поле first name and last name.
-    Изменено поле username на email.
+    """Настроенная под приложение Foodgram модель пользователя.
+    При создании пользователя все поля обязательны для заполнения.
+    Attribute:
+        username(str):
+            Логин пользователя.
+            Установлены ограничения по максимальной длине.
+            Дополнительное ограничение на стороне БД (null=False, blank=False)
+        email(str):
+            Адрес email пользователя
+            Установлено ограничение по максимальной длине.
+        first_name(str):
+            Имя пользователя.
+            Установлено ограничение по максимальной длине.
+        last_name(str):
+            Фамилия пользователя.
+            Установлено ограничение по максимальной длине.
+        password(str):
+            Пароль для авторизации.
     """
 
-    username = models.CharField(_("username"), max_length=150, unique=True)
-    email = models.EmailField(_("email address"), max_length=254, unique=True)
-    first_name = models.CharField(_("first name"), max_length=150)
-    last_name = models.CharField(_("last name"), max_length=150)
-    password = models.CharField(_("password"), max_length=150)
+    username = models.CharField(
+        _("username"),
+        blank=False,
+        null=False,
+        max_length=150,
+        unique=True
+    )
+    email = models.EmailField(
+        _("email address"),
+        max_length=254,
+        blank=False,
+        null=False,
+        unique=True
+    )
+    first_name = models.CharField(
+        _("first name"),
+        max_length=150
+    )
+    last_name = models.CharField(
+        _("last name"),
+        max_length=150
+    )
+    password = models.CharField(
+        _("password"),
+        max_length=150
+    )
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["username", "first_name", "last_name"]
+    REQUIRED_FIELDS = ("username", "first_name", "last_name")
 
     objects = CustomUserManager()
 
@@ -65,6 +100,18 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 class Subscribe(models.Model):
+    """Подписка на пользователя.
+    Модель связывает одну модель с собой: User c User.
+    Установлено ограничение на уникальность этой комбинации.
+    Attribute:
+        user(User):
+            Связь с моделью User через ForeignKey.
+        author(User):
+            Связь с моделью User через ForeignKey.
+    Examples:
+        Subscribe(User instance, User instance)
+        Subscribe(User instance, User instance)
+    """
     user = models.ForeignKey(
         to=CustomUser,
         on_delete=models.CASCADE,

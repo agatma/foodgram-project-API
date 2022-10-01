@@ -4,13 +4,14 @@ from django.core.management.base import BaseCommand
 
 from recipe.models import Ingredient
 
+
 class Command(BaseCommand):
     help = 'Добавляет ингредиенты из сsv файла в базу данных sqlite3.'
 
     def handle(self, *args, **options):
         with open(
-            'data/ingredients.csv',
-            'r', encoding='utf-8'
+                'data/ingredients.csv',
+                'r', encoding='utf-8'
         ) as file:
             reader = csv.reader(file, delimiter=',')
             Ingredient.objects.all().delete

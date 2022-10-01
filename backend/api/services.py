@@ -1,3 +1,6 @@
+"""Модуль вспомогательных функций.
+"""
+
 from typing import List
 
 from django.db.models import Sum
@@ -9,6 +12,12 @@ User = get_user_model()
 
 
 def make_ingredients_list(user: User) -> List[str]:
+    """Записывает ингредиенты вложенные в рецепт.
+    Создаёт объект IngredientAmountInRecipe связывающий объекты Recipe и
+    Ingredient с указанием количества конкретного ингредиента.
+    Returns:
+        Список с суммарным количеством каждого ингредиента
+    """
     ingredients = (
         IngredientAmountInRecipe.objects.filter(recipe__shopping_cart__user=user)
             .values("ingredient__name", "ingredient__measurement_unit")
@@ -24,6 +33,8 @@ def make_ingredients_list(user: User) -> List[str]:
 
 
 def create_ingredients_file(user: User) -> HttpResponse:
+    """Добавляет в список ингредиентов заголовок и возвращает HttpResponse.
+    """
     filename = "ingredients_to_buy.txt"
     response = HttpResponse(
         make_ingredients_list(user=user),

@@ -4,13 +4,12 @@ from djoser.views import UserViewSet
 from recipe.models import FavoriteRecipe, Ingredient, Recipe, ShoppingCart, Tag
 from rest_framework import mixins, pagination, viewsets
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import (AllowAny, IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from users.models import Subscribe
 
 from api.filters import IngredientFilter, RecipeFilter
-from api.mixins import RecipeActionPostDeleteGenericApiMixin, UserActionPostDeleteGenericApiMixin
-from api.permissions import IsAuthorOrReadOnly
+from api.mixins import RecipeActionPostDeleteMixin, UserActionPostDeleteGenericApiMixin
+from api.permissions import IsAuthorOrReadOnly, AdminOrReadOnly
 from api.serializers import (CustomUserSerializer, IngredientSerializer,
                              RecipeSerializer, ShortRecipeSerializer,
                              SubscribeSerializer, TagSerializer)
@@ -20,69 +19,86 @@ User = get_user_model()
 
 
 class CustomUserViewSet(UserViewSet):
+    """ViewSet для работы с пользователями."""
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     pagination_class = pagination.LimitOffsetPagination
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для работы с ингредиентами."""
     queryset = Ingredient.objects.all()
-    permission_classes = (AllowAny,)
+    permission_classes = AdminOrReadOnly,
     serializer_class = IngredientSerializer
     pagination_class = None
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = DjangoFilterBackend,
     filterset_class = IngredientFilter
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
+    """ViewSet для работы с рецептами."""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     pagination_class = pagination.LimitOffsetPagination
     permission_classes = (IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly)
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = DjangoFilterBackend,
     filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
 
-class RecipeFavoriteView(RecipeActionPostDeleteGenericApiMixin):
+class RecipePostDeleteFavoriteView(RecipeActionPostDeleteMixin):
+    """GenericApiView для добавления рецепта в избранное.
+    Attribute:
+        action_model_with_recipe: ModelWithAdditionalActionToRecipe
+    """
     queryset = Recipe.objects.all()
     serializer_class = ShortRecipeSerializer
-    permission_classes = (IsAuthenticated,)
-    action_model = FavoriteRecipe
+    permission_classes = IsAuthenticatedOrReadOnly,
+    action_model_with_recipe = FavoriteRecipe
 
 
 class SubscribeListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """ViewSet для работы с отображения списка подписок пользователя."""
     queryset = Subscribe.objects.all()
     serializer_class = SubscribeSerializer
-    permission_classes = (IsAuthenticated,)
+    permission_classes = IsAuthenticated,
     pagination_class = pagination.LimitOffsetPagination
 
 
-class SubscribeCreateDestroyView(UserActionPostDeleteGenericApiMixin):
+class SubscribePostDeleteView(UserActionPostDeleteGenericApiMixin):
+    """GenericApiView для добавления рецепта в список покупок.
+    Attribute:
+        action_model_with_recipe: ModelWithAdditionalActionToRecipe
+    """
     permission_classes = (IsAuthenticated,)
     queryset = User.objects.all()
-    action_model = Subscribe
+    action_model_with_user = Subscribe
 
 
-class ShoppingCartView(RecipeActionPostDeleteGenericApiMixin):
+class ShoppingCartPostDeleteView(RecipeActionPostDeleteMixin):
+    """GenericApiView для добавления рецепта в список покупок.
+    Attribute:
+        action_model_with_recipe: ModelWithAdditionalActionToRecipe
+    """
     queryset = Recipe.objects.all()
     serializer_class = ShortRecipeSerializer
-    permission_classes = (IsAuthenticated,)
-    action_model = ShoppingCart
+    permission_classes = IsAuthenticated,
+    action_model_with_recipe = ShoppingCart
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet для работы с тегами."""
     queryset = Tag.objects.all()
-    permission_classes = (AllowAny,)
+    permission_classes = AdminOrReadOnly,
     serializer_class = TagSerializer
     pagination_class = None
 
 
-class ShoppingCartDownload(GenericAPIView):
-    permission_classes = (IsAuthenticated,)
+class ShoppingCartDownloadView(GenericAPIView):
+    """Представление для загрузки списка покупок"""
+    permission_classes = IsAuthenticated,
 
     def get(self, request, *args, **kwargs):
         return create_ingredients_file(request.user)
-

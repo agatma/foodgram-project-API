@@ -8,8 +8,8 @@ from rest_framework import permissions
 from rest_framework.routers import DefaultRouter
 
 from api.views import (CustomUserViewSet, IngredientViewSet,
-                       RecipeFavoriteView, RecipeViewSet, ShoppingCartDownload,
-                       ShoppingCartView, SubscribeCreateDestroyView,
+                       RecipePostDeleteFavoriteView, RecipeViewSet, ShoppingCartDownloadView,
+                       ShoppingCartPostDeleteView, SubscribePostDeleteView,
                        SubscribeListViewSet, TagViewSet)
 
 router = DefaultRouter()
@@ -21,13 +21,13 @@ router.register("users/subscriptions", SubscribeListViewSet, basename="subscript
 router.register(r"users", CustomUserViewSet, basename="users")
 
 urlpatterns = [
-    path(r"recipes/download_shopping_cart/", ShoppingCartDownload.as_view()),
+    path(r"recipes/download_shopping_cart/", ShoppingCartDownloadView.as_view()),
+    path(r"users/<int:pk>/subscribe/", SubscribePostDeleteView.as_view()),
     path("", include(router.urls)),
     path("", include("djoser.urls")),
     path("auth/", include("djoser.urls.authtoken")),
-    path(r"recipes/<int:pk>/favorite/", RecipeFavoriteView.as_view()),
-    path(r"recipes/<int:pk>/shopping_cart/", ShoppingCartView.as_view()),
-    path(r"users/<int:pk>/subscribe/", SubscribeCreateDestroyView.as_view()),
+    path(r"recipes/<int:pk>/favorite/", RecipePostDeleteFavoriteView.as_view()),
+    path(r"recipes/<int:pk>/shopping_cart/", ShoppingCartPostDeleteView.as_view()),
 ]
 
 if settings.DEBUG:

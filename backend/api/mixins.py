@@ -1,3 +1,7 @@
+"""Модуль содержит дополнительные классы
+для настройки основных представлений приложения.
+"""
+
 from django.contrib.auth import get_user_model
 from django.db.models import Model
 from recipe.models import Recipe
@@ -8,11 +12,18 @@ from rest_framework.response import Response
 User = get_user_model()
 
 
-class RecipeActionPostDeleteGenericApiMixin(GenericAPIView):
-    action_model: Model = Recipe
+class RecipeActionPostDeleteMixin(GenericAPIView):
+    """Добавляет в GenericApiView методы Post и Delete.
+    Mixin упрощает добавление дополнительных методов
+    к основной модели Recipe: добавление в избранное,
+    в корзину и т.д.
+    Attribute:
+        action_model_with_recipe(Recipe): AddToFavoriteModel
+    """
+    action_model_with_recipe: Model = Recipe
 
     def post(self, request, *args, **kwargs):
-        _, created = self.action_model.objects.get_or_create(
+        _, created = self.action_model_with_recipe.objects.get_or_create(
             recipe=self.get_object(), user=request.user
         )
         if created:
@@ -23,7 +34,7 @@ class RecipeActionPostDeleteGenericApiMixin(GenericAPIView):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, *args, **kwargs):
-        obj = self.action_model.objects.filter(
+        obj = self.action_model_with_recipe.objects.filter(
             recipe=self.get_object(), user=request.user
         )
         if obj.exists():
@@ -33,18 +44,26 @@ class RecipeActionPostDeleteGenericApiMixin(GenericAPIView):
 
 
 class UserActionPostDeleteGenericApiMixin(GenericAPIView):
-    action_model: Model = User
+    """Добавляет в GenericApiView методы Post и Delete.
+    Mixin упрощает добавление дополнительных методов
+    к основной модели User: подписка, отписка, лайк и т.д.
+    Attribute:
+        action_model_with_user(Recipe): SubscribeToUserModel
+    """
+    action_model_with_user: Model = User
 
     def post(self, request, *args, **kwargs):
-        _, created = self.action_model.objects.get_or_create(
+        if self.get_object() == request.user:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        _, created = self.action_model_with_user.objects.get_or_create(
             user=request.user, author=self.get_object()
         )
-        if self.get_object() == request.user or not created:
+        if not created:
             return Response(status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
-        instance = self.action_model.objects.filter(
+        instance = self.action_model_with_user.objects.filter(
             user=request.user, author=self.get_object()
         )
         if instance.exists():
