@@ -39,7 +39,7 @@ class RecipeActionPostDeleteMixin(GenericAPIView):
             recipe=self.get_object(), user=request.user
         )
         if obj.exists():
-            obj.first().delete()
+            obj.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
@@ -68,6 +68,6 @@ class UserActionPostDeleteGenericApiMixin(GenericAPIView):
             user=request.user, author=self.get_object()
         )
         if instance.exists():
-            instance.first().delete()
+            instance.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(status=status.HTTP_400_BAD_REQUEST)

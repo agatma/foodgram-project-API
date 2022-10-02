@@ -9,7 +9,9 @@ from rest_framework.permissions import (IsAuthenticated,
 from api.filters import IngredientFilter, RecipeFilter
 from api.mixins import (RecipeActionPostDeleteMixin,
                         UserActionPostDeleteGenericApiMixin)
-from api.permissions import AdminOrReadOnly, IsAuthorOrReadOnly
+from api.permissions import (
+    AdminOrReadOnly, IsAuthorOrReadOnly, UserAuthenticatedOrReadOnly
+)
 from api.serializers import (CustomUserSerializer, IngredientSerializer,
                              RecipeSerializer, ShortRecipeSerializer,
                              SubscribeSerializer, TagSerializer)
@@ -25,6 +27,7 @@ class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     pagination_class = pagination.LimitOffsetPagination
+    permission_classes = UserAuthenticatedOrReadOnly,
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):

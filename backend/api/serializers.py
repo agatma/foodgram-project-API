@@ -314,7 +314,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
         Returns:
             int: Количество рецептов созданных запрошенным пользователем.
         """
-        return obj.recipes.count()
+        return obj.author.recipes.count()
 
     @staticmethod
     def get_is_subscribed(obj: User) -> bool:
