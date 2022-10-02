@@ -4,10 +4,11 @@
 
 from django.contrib.auth import get_user_model
 from django.db.models import Model
-from recipe.models import Recipe
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
+
+from recipe.models import Recipe
 
 User = get_user_model()
 

@@ -8,9 +8,10 @@ from rest_framework import permissions
 from rest_framework.routers import DefaultRouter
 
 from api.views import (CustomUserViewSet, IngredientViewSet,
-                       RecipePostDeleteFavoriteView, RecipeViewSet, ShoppingCartDownloadView,
-                       ShoppingCartPostDeleteView, SubscribePostDeleteView,
-                       SubscribeListViewSet, TagViewSet)
+                       RecipePostDeleteFavoriteView, RecipeViewSet,
+                       ShoppingCartDownloadView, ShoppingCartPostDeleteView,
+                       SubscribeListViewSet, SubscribePostDeleteView,
+                       TagViewSet)
 
 router = DefaultRouter()
 router.register("tags", TagViewSet, basename="tags")

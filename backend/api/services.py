@@ -3,15 +3,17 @@
 
 from typing import List
 
-from django.db.models import Sum
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from django.http import HttpResponse
+
+from api.conf import FILENAME, CONTENT_TYPE, TOTAL_INGREDIENTS_HEADER
 from recipe.models import IngredientAmountInRecipe
 
 User = get_user_model()
 
 
-def make_ingredients_list(user: User) -> List[str]:
+def make_ingredients(user: User) -> str:
     """Записывает ингредиенты вложенные в рецепт.
     Создаёт объект IngredientAmountInRecipe связывающий объекты Recipe и
     Ingredient с указанием количества конкретного ингредиента.
@@ -23,7 +25,7 @@ def make_ingredients_list(user: User) -> List[str]:
             .values("ingredient__name", "ingredient__measurement_unit")
             .annotate(Sum("amount"))
     )
-    total_ingredients = 'Список ингредиентов: \n\n'
+    total_ingredients = TOTAL_INGREDIENTS_HEADER
     for ingredient in ingredients:
         name = ingredient["ingredient__name"]
         unit = ingredient["ingredient__measurement_unit"]
@@ -35,10 +37,10 @@ def make_ingredients_list(user: User) -> List[str]:
 def create_ingredients_file(user: User) -> HttpResponse:
     """Добавляет в список ингредиентов заголовок и возвращает HttpResponse.
     """
-    filename = "ingredients_to_buy.txt"
+    filename = FILENAME
     response = HttpResponse(
-        make_ingredients_list(user=user),
-        content_type="text/plain; charset=UTF-8",
+        make_ingredients(user=user),
+        content_type=CONTENT_TYPE,
     )
-    response["Content-Disposition"] = "attachment; filename={0}".format(filename)
+    response["Content-Disposition"] = f"attachment; filename={filename}"
     return response

@@ -1,27 +1,4 @@
-"""Модуль для создания, настройки и управления моделями пакета `recipe`.
-
-Models:
-    Recipe:
-        Главная модель приложения, через которую описываются рецепты.
-        Связана с моделями: Tag, Ingredient, IngredientAmountInRecipe,
-        FavoriteRecipe, ShoppingCart
-    Tag:
-       Модель для группировки рецептов по тегам (завтрак, обед, ужин и тд.).
-       Связана с Recipe через Many-To-Many.
-    Ingredient:
-        Модель для описания ингредиентов.
-        Загрузка ингредиентов происходит через команду python manage.py loader
-        Связана с Recipe через модель IngredientAmountInRecipe (Many-To-Many).
-    IngredientAmountInRecipe:
-        Модель для связи ингредиентов (Ingredient) и рецептов (Recipe)
-        Также указывает количество ингредиента.
-    FavoriteRecipe:
-        Модель для добавления и исключения рецептов из избранных
-        Связана внешним ключом с моделью Recipe и User
-    ShoppingCart:
-        Модель для добавления и исключения рецептов из списка покупок
-        Связана внешним ключом с моделью Recipe и User
-"""
+"""Модуль для создания, настройки и управления моделями пакета `recipe`."""
 
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
@@ -97,7 +74,7 @@ class Ingredient(models.Model):
         null=False
     )
     measurement_unit = models.CharField(
-        _("Measurement unit"),
+        _("measurement unit"),
         max_length=30,
         null=False
     )
@@ -106,11 +83,6 @@ class Ingredient(models.Model):
         ordering = ("name",)
         verbose_name = "ингредиент"
         verbose_name_plural = "ингредиенты"
-        constraints = (
-            models.UniqueConstraint(
-                fields=("name", "measurement_unit"), name="unique_ingredient"
-            ),
-        )
 
     def __str__(self):
         return f"Ингредиент: {self.name} - {self.measurement_unit}"
@@ -177,11 +149,8 @@ class Recipe(models.Model):
         null=True,
         default=None
     )
-    cooking_time = models.PositiveIntegerField(
+    cooking_time = models.PositiveSmallIntegerField(
         _("Время приготовления"),
-        validators=(
-            MinValueValidator(1, "Время приготовления должно быть больше минуты"),
-        ),
     )
 
     date = models.DateTimeField(
@@ -223,11 +192,8 @@ class IngredientAmountInRecipe(models.Model):
         related_name="ingredients_in_recipe",
         on_delete=models.RESTRICT
     )
-    amount = models.PositiveIntegerField(
+    amount = models.PositiveSmallIntegerField(
         _("Количество"),
-        validators=(
-            MinValueValidator(1, "Количество должно быть больше или равно одному"),
-        ),
     )
 
     class Meta:

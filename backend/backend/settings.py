@@ -1,7 +1,7 @@
 import os
-from dotenv import load_dotenv
-
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -9,9 +9,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='django-insecure-tem@6^$9k&26l@$)i0-xm_nbg#&3d^a3)+2e2ny(ezs$@&cqj#')
 
-DEBUG = True
+DEBUG = os.getenv('DEBUG', default=False)
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [os.getenv('ALLOWED_HOSTS', default="localhost")]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -62,14 +62,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "backend.wsgi.application"
-
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": os.path.join(BASE_DIR, "sqlite.db"),
-#     }
-# }
-
 
 DATABASES = {
     'default': {

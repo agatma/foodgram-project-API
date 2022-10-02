@@ -1,19 +1,21 @@
 import base64
 from collections import OrderedDict
-from collections.abc import Iterator
-from typing import List, Dict
+from typing import Dict, List
 
+from django.core.validators import MinValueValidator
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
-from recipe.models import (
-    Ingredient,
-    IngredientAmountInRecipe,
-    Recipe,
-    ShoppingCart,
-    Tag,
-)
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+
+from api.conf import (
+    COOKING_MIN_VALUE, AMOUNT_MIN_VALUE, MIN_VALUE_ERROR_MESSAGE,
+    TAGS_ERROR_MESSAGE, INGREDIENTS_ERROR_MESSAGE
+)
+from recipe.models import (
+    Ingredient, IngredientAmountInRecipe, Recipe, ShoppingCart, Tag
+)
 from users.models import Subscribe
 
 User = get_user_model()
@@ -22,7 +24,7 @@ User = get_user_model()
 class Base64ImageField(serializers.ImageField):
     """Сериализатор для загрузки изображения."""
 
-    def to_internal_value(self, data):
+    def to_internal_value(self, data: str) -> str:
         if isinstance(data, str) and data.startswith("data:image"):
             format, imgstr = data.split(";base64,")
             ext = format.split("/")[-1]
@@ -32,7 +34,7 @@ class Base64ImageField(serializers.ImageField):
 
 class CustomUserSerializer(serializers.ModelSerializer):
     """Сериализатор для вывода пользователя с доп. полем is_subscribed."""
-    is_subscribed = serializers.SerializerMethodField()
+    is_subscribed = serializers.SerializerMethodField(method_name="get_is_subscribed")
 
     class Meta:
         model = User
@@ -65,6 +67,9 @@ class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = "__all__"
+        validators = UniqueTogetherValidator(
+            queryset=Ingredient.objects.all(), fields=("name", "measurement_unit")
+        )
 
 
 class IngredientAmountSerializer(serializers.ModelSerializer):
@@ -74,7 +79,10 @@ class IngredientAmountSerializer(serializers.ModelSerializer):
     measurement_unit = serializers.ReadOnlyField(
         source="ingredient.measurement_unit",
     )
-    amount = serializers.IntegerField(min_value=1)
+    amount = serializers.IntegerField(
+        min_value=AMOUNT_MIN_VALUE,
+        validators=(MinValueValidator(AMOUNT_MIN_VALUE, MIN_VALUE_ERROR_MESSAGE),)
+    )
 
     class Meta:
         model = IngredientAmountInRecipe
@@ -130,11 +138,14 @@ class RecipeSerializer(serializers.ModelSerializer):
     )
     author = CustomUserSerializer(read_only=True)
     cooking_time = serializers.IntegerField(
-        min_value=1,
-        required=True
+        min_value=COOKING_MIN_VALUE,
+        required=True,
+        validators=(MinValueValidator(COOKING_MIN_VALUE, MIN_VALUE_ERROR_MESSAGE),)
     )
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField(read_only=True)
+    is_favorited = serializers.SerializerMethodField(method_name="get_is_favorited")
+    is_in_shopping_cart = serializers.SerializerMethodField(
+        read_only=True, method_name="get_is_in_shopping_cart"
+    )
 
     class Meta:
         model = Recipe
@@ -166,7 +177,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         """Проверка тегов"""
         if not data or len(set(data)) < len(data):
             raise serializers.ValidationError(
-                {"tags": "Укажите уникальные теги"}
+                {"tags": TAGS_ERROR_MESSAGE}
             )
         return data
 
@@ -175,7 +186,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         """Проверка ингредиентов"""
         if len({i.get("id") for i in data}) < len(data):
             raise serializers.ValidationError(
-                {"ingredients": "Ингредиенты в списке должны быть уникальны"}
+                {"ingredients": INGREDIENTS_ERROR_MESSAGE}
             )
         return data
 
@@ -207,6 +218,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             user=self.context.get("request").user, recipe=obj
         ).exists()
 
+    @transaction.atomic
     def create(self, validated_data: Dict) -> Recipe:
         """Создание рецепта"""
         ingredients = validated_data.pop("ingredients_in_recipe")
@@ -218,6 +230,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
         return recipe
 
+    @transaction.atomic
     def update(self, recipe, validated_data: Dict) -> Recipe:
         """Обновление рецепта"""
         if "ingredients_in_recipe" in self.validated_data:
@@ -259,9 +272,9 @@ class SubscribeSerializer(serializers.ModelSerializer):
     username = serializers.ReadOnlyField(source="author.username")
     first_name = serializers.ReadOnlyField(source="author.first_name")
     last_name = serializers.ReadOnlyField(source="author.last_name")
-    recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
-    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField(method_name="get_recipes")
+    recipes_count = serializers.SerializerMethodField(method_name="get_recipes_count")
+    is_subscribed = serializers.SerializerMethodField(method_name="get_is_subscribed")
 
     class Meta:
         model = User
@@ -294,15 +307,14 @@ class SubscribeSerializer(serializers.ModelSerializer):
         serializer = ShortRecipeSerializer(recipes, many=True)
         return serializer.data
 
-    @staticmethod
-    def get_recipes_count(obj: User) -> int:
+    def get_recipes_count(self, obj: User) -> int:
         """ Показывает общее количество рецептов у автора.
         Args:
             obj (User): Запрошенный пользователь.
         Returns:
             int: Количество рецептов созданных запрошенным пользователем.
         """
-        return Recipe.objects.filter(author=obj.author).count()
+        return obj.recipes.count()
 
     @staticmethod
     def get_is_subscribed(obj: User) -> bool:

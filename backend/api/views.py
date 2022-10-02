@@ -1,19 +1,21 @@
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from recipe.models import FavoriteRecipe, Ingredient, Recipe, ShoppingCart, Tag
 from rest_framework import mixins, pagination, viewsets
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
-from users.models import Subscribe
+from rest_framework.permissions import (IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 
 from api.filters import IngredientFilter, RecipeFilter
-from api.mixins import RecipeActionPostDeleteMixin, UserActionPostDeleteGenericApiMixin
-from api.permissions import IsAuthorOrReadOnly, AdminOrReadOnly
+from api.mixins import (RecipeActionPostDeleteMixin,
+                        UserActionPostDeleteGenericApiMixin)
+from api.permissions import AdminOrReadOnly, IsAuthorOrReadOnly
 from api.serializers import (CustomUserSerializer, IngredientSerializer,
                              RecipeSerializer, ShortRecipeSerializer,
                              SubscribeSerializer, TagSerializer)
 from api.services import create_ingredients_file
+from recipe.models import FavoriteRecipe, Ingredient, Recipe, ShoppingCart, Tag
+from users.models import Subscribe
 
 User = get_user_model()
 
@@ -70,7 +72,7 @@ class SubscribeListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 class SubscribePostDeleteView(UserActionPostDeleteGenericApiMixin):
     """GenericApiView для добавления рецепта в список покупок.
     Attribute:
-        action_model_with_recipe: ModelWithAdditionalActionToRecipe
+        action_model_with_user: ModelWithAdditionalActionToUser
     """
     permission_classes = (IsAuthenticated,)
     queryset = User.objects.all()
