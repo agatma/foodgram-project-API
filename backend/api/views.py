@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from rest_framework import mixins, pagination, viewsets
+from rest_framework import mixins, viewsets
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
@@ -10,6 +10,7 @@ from api.filters import IngredientFilter, RecipeFilter
 from api.mixins import (RecipeActionPostDeleteMixin,
                         UserActionPostDeleteGenericApiMixin)
 from api.permissions import AdminOrReadOnly, IsAdminAuthorOrReadOnly
+from api.pagination import CustomPagination
 from api.serializers import (CustomUserSerializer, IngredientSerializer,
                              RecipeSerializer, ShortRecipeSerializer,
                              SubscribeSerializer, TagSerializer)
@@ -24,7 +25,7 @@ class CustomUserViewSet(UserViewSet):
     """ViewSet для работы с пользователями."""
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
-    pagination_class = pagination.LimitOffsetPagination
+    pagination_class = CustomPagination
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
@@ -41,7 +42,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """ViewSet для работы с рецептами."""
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    pagination_class = pagination.LimitOffsetPagination
+    pagination_class = CustomPagination
     permission_classes = IsAdminAuthorOrReadOnly,
     filter_backends = DjangoFilterBackend,
     filterset_class = RecipeFilter
@@ -66,7 +67,7 @@ class SubscribeListViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = Subscribe.objects.all()
     serializer_class = SubscribeSerializer
     permission_classes = IsAuthenticated,
-    pagination_class = pagination.LimitOffsetPagination
+    pagination_class = CustomPagination
 
 
 class SubscribePostDeleteView(UserActionPostDeleteGenericApiMixin):
