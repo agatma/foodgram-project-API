@@ -6,7 +6,7 @@ from users.models import CustomUser, Subscribe
 class CustomUserAdmin(admin.ModelAdmin):
     list_display = ("id", "username", "email", "first_name", "last_name")
     search_fields = ("username", "email")
-    list_filter = ("username", "email")
+    list_filter = ("is_staff", "is_superuser")
     ordering = ("email",)
     fieldsets = (
         (None, {"fields": ("username", "email", "password")}),
@@ -30,6 +30,7 @@ class SubscribeAdmin(admin.ModelAdmin):
         "user",
         "author",
     )
+    search_fields = ("user__username", "user__email", "author__username", "author__email")
 
 
 admin.site.register(CustomUser, CustomUserAdmin)

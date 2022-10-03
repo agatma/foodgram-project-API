@@ -13,7 +13,7 @@ class TagAdmin(admin.ModelAdmin):
         "slug",
     )
     search_fields = (
-        "name",
+        "name", "color", "slug"
     )
 
 
@@ -26,14 +26,34 @@ class IngredientAdmin(admin.ModelAdmin):
     search_fields = (
         "name",
     )
+    list_filter = ("measurement_unit",)
+
+
+class IngredientInRecipeAdmin(admin.TabularInline):
+    model = IngredientAmountInRecipe
+    fk_name = 'recipe'
 
 
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "text", "image", "author", "cooking_time")
-    list_editable = ("name", "text", "image", "author", "cooking_time")
+    list_display = ("id", "name", "author", "amount_favorites", "amount_shopping")
+    list_filter = ("tags",)
+
     search_fields = (
-        "name", "author"
+        "name", "author__username", "author__email"
     )
+    inlines = (
+        IngredientInRecipeAdmin,
+    )
+
+    @staticmethod
+    @admin.display(description="В избранном, раз")
+    def amount_favorites(obj):
+        return obj.favorite_recipe.count()
+
+    @staticmethod
+    @admin.display(description="В списке покупок, раз")
+    def amount_shopping(obj):
+        return obj.shopping_cart.count()
 
 
 class IngredientAmountInRecipeAdmin(admin.ModelAdmin):
@@ -42,10 +62,10 @@ class IngredientAmountInRecipeAdmin(admin.ModelAdmin):
         "recipe",
         "ingredient",
         "amount",
+
     )
-    list_filter = ("recipe", "ingredient")
     search_fields = (
-        "recipe",
+        "recipe__name", "recipe__author__username", "recipe__author__email"
     )
 
 
@@ -55,10 +75,10 @@ class FavoriteRecipeAdmin(admin.ModelAdmin):
         "user",
         "recipe",
     )
-    list_filter = ("user", "recipe")
     search_fields = (
-        "recipe",
+        "recipe__name", "user__username", "user__email"
     )
+    list_filter = ("recipe__tags",)
 
 
 class ShoppingCartAdmin(admin.ModelAdmin):
@@ -67,10 +87,10 @@ class ShoppingCartAdmin(admin.ModelAdmin):
         "user",
         "recipe",
     )
-    list_filter = ("user", "recipe")
     search_fields = (
-        "recipe",
+        "recipe__name", "user__username", "user__email"
     )
+    list_filter = ("recipe__tags",)
 
 
 admin.site.register(Tag, TagAdmin)

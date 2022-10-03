@@ -76,6 +76,7 @@ class SubscribePostDeleteView(UserActionPostDeleteGenericApiMixin):
     """
     permission_classes = (IsAuthenticated,)
     queryset = User.objects.all()
+    serializer_class = SubscribeSerializer
     action_model_with_user = Subscribe
 
 

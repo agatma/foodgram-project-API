@@ -56,12 +56,15 @@ class UserActionPostDeleteGenericApiMixin(GenericAPIView):
     def post(self, request, *args, **kwargs):
         if self.get_object() == request.user:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        _, created = self.action_model_with_user.objects.get_or_create(
+        obj, created = self.action_model_with_user.objects.get_or_create(
             user=request.user, author=self.get_object()
         )
         if not created:
             return Response(status=status.HTTP_400_BAD_REQUEST)
-        return Response(status=status.HTTP_201_CREATED)
+        return Response(
+            data=self.get_serializer(obj).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     def delete(self, request, *args, **kwargs):
         instance = self.action_model_with_user.objects.filter(
