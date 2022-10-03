@@ -63,6 +63,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "backend.wsgi.application"
 
+
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
@@ -134,9 +135,9 @@ REST_FRAMEWORK = {
 DJOSER = {
     "LOGIN_FIELD": "email",
     'HIDE_USERS': False,
-    'PERMISSIONS': {
-        'user': ('api.permissions.IsAuthorOrReadOnly',),
-        'user_list': ('api.permissions.IsAuthorOrReadOnly',),
+    "PERMISSIONS": {
+        "user": ("rest_framework.permissions.AllowAny", ),
+        "user_list": ("rest_framework.permissions.AllowAny",),
     },
     "SERIALIZERS": {
         "user": "api.serializers.CustomUserSerializer",
